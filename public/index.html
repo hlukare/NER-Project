@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Named Entity Recognition Analyzer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary: #2c3e50;
+            --secondary: #34495e;
+            --accent: #3498db;
+            --text: #ecf0f1;
+            --card-bg: rgba(44, 62, 80, 0.85);
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a2a3a, #0d1b2a);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Animated background elements */
+        .background-elements {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .floating-element {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(52, 152, 219, 0.1);
+            animation: float 15s infinite ease-in-out;
+        }
+
+        .floating-element:nth-child(1) {
+            width: 120px;
+            height: 120px;
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+            background: rgba(46, 204, 113, 0.08);
+        }
+
+        .floating-element:nth-child(2) {
+            width: 80px;
+            height: 80px;
+            top: 20%;
+            right: 15%;
+            animation-delay: 2s;
+            background: rgba(243, 156, 18, 0.08);
+        }
+
+        .floating-element:nth-child(3) {
+            width: 100px;
+            height: 100px;
+            bottom: 20%;
+            left: 15%;
+            animation-delay: 4s;
+            background: rgba(231, 76, 60, 0.08);
+        }
+
+        .floating-element:nth-child(4) {
+            width: 60px;
+            height: 60px;
+            bottom: 10%;
+            right: 10%;
+            animation-delay: 6s;
+            background: rgba(155, 89, 182, 0.08);
+        }
+
+        /* Moving lines */
+        .moving-line {
+            position: absolute;
+            height: 1px;
+            background: rgba(52, 152, 219, 0.15);
+            animation: moveLine 20s infinite linear;
+        }
+
+        .moving-line:nth-child(5) {
+            width: 100px;
+            top: 30%;
+            left: -100px;
+            animation-delay: 0s;
+        }
+
+        .moving-line:nth-child(6) {
+            width: 150px;
+            top: 60%;
+            right: -150px;
+            animation-delay: 5s;
+            background: rgba(46, 204, 113, 0.15);
+        }
+
+        .moving-line:nth-child(7) {
+            width: 200px;
+            bottom: 40%;
+            left: -200px;
+            animation-delay: 10s;
+            background: rgba(243, 156, 18, 0.15);
+        }
+
+        .moving-line:nth-child(8) {
+            width: 120px;
+            bottom: 20%;
+            right: -120px;
+            animation-delay: 15s;
+            background: rgba(231, 76, 60, 0.15);
+        }
+
+        /* Main container */
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 2.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: fadeIn 1s ease-out;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(5px);
+        }
+
+        /* Header */
+        .app-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .app-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .app-header p {
+            color: rgba(236, 240, 241, 0.8);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Form styling */
+        .input-group {
+            display: flex;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .input-field {
+            flex: 1;
+            padding: 1.2rem 1.5rem;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 6px 0 0 6px;
+            background: rgba(52, 73, 94, 0.6);
+            color: var(--text);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-right: none;
+        }
+
+        .input-field:focus {
+            outline: none;
+            background: rgba(52, 73, 94, 0.8);
+            box-shadow: 0 0 0 2px var(--accent);
+        }
+
+        .submit-btn {
+            padding: 0 2rem;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 0 6px 6px 0;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            background: #2980b9;
+        }
+
+        .submit-btn i {
+            margin-left: 8px;
+        }
+
+        /* Result table */
+        .result-container {
+            margin-top: 2rem;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        .result-title {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        .result-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: rgba(52, 73, 94, 0.5);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .result-table th {
+            background: var(--secondary);
+            color: white;
+            padding: 1.2rem;
+            text-align: center;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+        }
+
+        .result-table tr {
+            transition: background 0.3s ease;
+        }
+
+        .result-table tr:hover {
+            background: rgba(52, 152, 219, 0.1);
+        }
+
+        .result-table td {
+            padding: 1rem 1.2rem;
+            text-align: center;
+            color: var(--text);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .result-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Tag styling */
+        .tag {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: 500;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tag-PERSON {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .tag-ORG {
+            background-color: #9b59b6;
+            color: white;
+        }
+
+        .tag-GPE {
+            background-color: #2ecc71;
+            color: white;
+        }
+
+        .tag-DATE {
+            background-color: #f39c12;
+            color: white;
+        }
+
+        .tag-MISC {
+            background-color: #e74c3c;
+            color: white;
+        }
+
+        /* Footer */
+        .app-footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: rgba(236, 240, 241, 0.6);
+            font-size: 0.9rem;
+        }
+
+        /* Animations */
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) translateX(0) rotate(0deg);
+            }
+            25% {
+                transform: translateY(-20px) translateX(15px) rotate(5deg);
+            }
+            50% {
+                transform: translateY(10px) translateX(-15px) rotate(-5deg);
+            }
+            75% {
+                transform: translateY(20px) translateX(10px) rotate(3deg);
+            }
+        }
+
+        @keyframes moveLine {
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(calc(100vw + 200px));
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+            }
+            
+            .app-header h1 {
+                font-size: 2rem;
+            }
+            
+            .input-group {
+                flex-direction: column;
+            }
+            
+            .input-field {
+                border-radius: 6px;
+                margin-bottom: 1rem;
+                border-right: 1px solid rgba(255, 255, 255, 0.1);
+            }
+            
+            .submit-btn {
+                border-radius: 6px;
+                padding: 1rem;
+            }
+            
+            .result-table {
+                font-size: 0.9rem;
+            }
+            
+            .result-table th, 
+            .result-table td {
+                padding: 0.8rem 0.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .app-header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .app-header p {
+                font-size: 1rem;
+            }
+            
+            .input-field {
+                font-size: 1rem;
+            }
+            
+            .result-table {
+                font-size: 0.8rem;
+            }
+            
+            .tag {
+                font-size: 0.7rem;
+                padding: 0.4rem 0.8rem;
+            }
+        }
+
+        /* Loading animation */
+        .loader {
+            display: none;
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .loader-dot {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: var(--accent);
+            margin: 0 5px;
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+
+        .loader-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .loader-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated background elements -->
+    <div class="background-elements">
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+        
+        <div class="moving-line"></div>
+        <div class="moving-line"></div>
+        <div class="moving-line"></div>
+        <div class="moving-line"></div>
+    </div>
+
+    <div class="container">
+        <header class="app-header">
+            <h1><i class="fas fa-code-branch"></i> Named Entity Recognition</h1>
+            <p>Identify and classify named entities in text including persons, organizations, locations, and more.</p>
+        </header>
+
+        <form id="ner-form">
+            <div class="input-group">
+                <input type="text" id="sentence" class="input-field" placeholder="Enter a sentence to analyze..." required>
+                <button type="submit" class="submit-btn">Analyze <i class="fas fa-search"></i></button>
+            </div>
+        </form>
+
+        <div class="loader" id="loader">
+            <div class="loader-dot"></div>
+            <div class="loader-dot"></div>
+            <div class="loader-dot"></div>
+        </div>
+
+        <div class="result-container" id="result-container" style="display: none;">
+            <h2 class="result-title">Analysis Results</h2>
+            <table class="result-table" id="result-table">
+                <tr>
+                    <th>Word</th>
+                    <th>Entity Type</th>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <footer class="app-footer">
+        <p>Advanced NLP Analysis | &copy; 2023 Entity Recognition System</p>
+    </footer>
+
+    <script>
+        document.getElementById('ner-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const sentence = document.getElementById('sentence').value;
+            const loader = document.getElementById('loader');
+            const resultContainer = document.getElementById('result-container');
+            const resultTable = document.getElementById('result-table');
+            
+            // Show loader, hide previous results
+            loader.style.display = 'block';
+            resultContainer.style.display = 'none';
+            
+            try {
+                // Clear previous results (keep header)
+                while (resultTable.rows.length > 1) {
+                    resultTable.deleteRow(1);
+                }
+                
+                // Make API request to Netlify function
+                const response = await fetch('/.netlify/functions/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ sentence: sentence })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `Server returned ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                // Display results
+                for (const [word, tag] of result) {
+                    const row = resultTable.insertRow();
+                    const wordCell = row.insertCell(0);
+                    const tagCell = row.insertCell(1);
+                    
+                    wordCell.textContent = word;
+                    tagCell.innerHTML = `<span class="tag tag-${tag}">${tag}</span>`;
+                }
+                
+                // Show results container
+                resultContainer.style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error: ' + error.message);
+            } finally {
+                // Hide loader
+                loader.style.display = 'none';
+            }
+        });
+
+        // Add animation to table rows
+        function animateTableRows() {
+            const tableRows = document.querySelectorAll('.result-table tr');
+            tableRows.forEach((row, index) => {
+                row.style.animationDelay = `${index * 0.05}s`;
+            });
+        }
+
+        // Add hover effect to table rows
+        function addRowHoverEffects() {
+            const tableRows = document.querySelectorAll('.result-table tr');
+            tableRows.forEach(row => {
+                row.addEventListener('mouseenter', () => {
+                    row.style.transform = 'translateY(-2px)';
+                    row.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.1)';
+                    row.style.transition = 'all 0.3s ease';
+                });
+                
+                row.addEventListener('mouseleave', () => {
+                    row.style.transform = 'translateY(0)';
+                    row.style.boxShadow = 'none';
+                });
+            });
+        }
+    </script>
+</body>
+</html>
