@@ -3,7 +3,6 @@
   functions = "netlify/functions"
 
 [build.environment]
-  # Python version
   PYTHON_VERSION = "3.9"
 
 [[redirects]]
@@ -15,3 +14,10 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Explicitly define function configurations
+[functions]
+  node_bundler = "esbuild"
+
+[functions.predict]
+  included_files = []
