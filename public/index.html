@@ -500,86 +500,80 @@
         <p>Advanced NLP Analysis | &copy; 2023 Entity Recognition System</p>
     </footer>
 
-    <script>
-        document.getElementById('ner-form').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const sentence = document.getElementById('sentence').value;
-            const loader = document.getElementById('loader');
-            const resultContainer = document.getElementById('result-container');
-            const resultTable = document.getElementById('result-table');
-            
-            // Show loader, hide previous results
-            loader.style.display = 'block';
-            resultContainer.style.display = 'none';
-            
-            try {
-                // Clear previous results (keep header)
-                while (resultTable.rows.length > 1) {
-                    resultTable.deleteRow(1);
-                }
-                
-                // Make API request to Netlify function
-                const response = await fetch('/.netlify/functions/predict', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ sentence: sentence })
-                });
-                
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || `Server returned ${response.status}`);
-                }
-                
-                const result = await response.json();
-                
-                // Display results
-                for (const [word, tag] of result) {
-                    const row = resultTable.insertRow();
-                    const wordCell = row.insertCell(0);
-                    const tagCell = row.insertCell(1);
-                    
-                    wordCell.textContent = word;
-                    tagCell.innerHTML = `<span class="tag tag-${tag}">${tag}</span>`;
-                }
-                
-                // Show results container
-                resultContainer.style.display = 'block';
-                
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error: ' + error.message);
-            } finally {
-                // Hide loader
-                loader.style.display = 'none';
+   <script>
+    document.getElementById('ner-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const sentence = document.getElementById('sentence').value;
+        const loader = document.getElementById('loader');
+        const resultContainer = document.getElementById('result-container');
+        const resultTable = document.getElementById('result-table');
+        
+        // Show loader, hide previous results
+        loader.style.display = 'block';
+        resultContainer.style.display = 'none';
+        
+        try {
+            // Clear previous results (keep header)
+            while (resultTable.rows.length > 1) {
+                resultTable.deleteRow(1);
             }
-        });
-
-        // Add animation to table rows
-        function animateTableRows() {
-            const tableRows = document.querySelectorAll('.result-table tr');
-            tableRows.forEach((row, index) => {
-                row.style.animationDelay = `${index * 0.05}s`;
+            
+            // Make API request to Netlify function
+            const response = await fetch('/.netlify/functions/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ sentence: sentence })
             });
-        }
-
-        // Add hover effect to table rows
-        function addRowHoverEffects() {
-            const tableRows = document.querySelectorAll('.result-table tr');
-            tableRows.forEach(row => {
-                row.addEventListener('mouseenter', () => {
-                    row.style.transform = 'translateY(-2px)';
-                    row.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.1)';
-                    row.style.transition = 'all 0.3s ease';
-                });
+            
+            // Check if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('Non-JSON response:', text);
+                throw new Error(`Server returned ${response.status}: ${response.statusText}. Response: ${text.substring(0, 100)}`);
+            }
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `Server returned ${response.status}`);
+            }
+            
+            const result = await response.json();
+            
+            // Display results
+            for (const [word, tag] of result) {
+                const row = resultTable.insertRow();
+                const wordCell = row.insertCell(0);
+                const tagCell = row.insertCell(1);
                 
-                row.addEventListener('mouseleave', () => {
-                    row.style.transform = 'translateY(0)';
-                    row.style.boxShadow = 'none';
-                });
-            });
+                wordCell.textContent = word;
+                tagCell.innerHTML = `<span class="tag tag-${tag}">${tag}</span>`;
+            }
+            
+            // Show results container
+            resultContainer.style.display = 'block';
+            
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error: ' + error.message);
+        } finally {
+            // Hide loader
+            loader.style.display = 'none';
         }
-    </script>
+    });
+
+    // Test function endpoint on page load
+    window.addEventListener('load', async function() {
+        try {
+            const response = await fetch('/.netlify/functions/predict');
+            const data = await response.json();
+            console.log('Function test:', data);
+        } catch (error) {
+            console.error('Function test failed:', error);
+        }
+    });
+</script>
 </body>
 </html>
